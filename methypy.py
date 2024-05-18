@@ -58,13 +58,53 @@ def update_methylation_df(methylation_df, df, methyl_type, half_cols):
     """
     # Select rows that match the given methylation type
     methyl_df = df[df['MethylType'] == methyl_type]  
+
     for index, row in methylation_df.iterrows():
         sequence = row['Sequence']
+
         for i in range(1, half_cols):
             # Count occurrences of the sequence in the methylation type-specific dataframe
             count = methyl_df[methyl_df[f'R{i}'] == sequence].shape[0]
             methylation_df.at[index, f'R{i}'] = count
+
     return methylation_df
+
+
+def add_summary_rows(df):
+    """
+    Add summary rows to the dataframe based on specific categories.
+
+    Parameters:
+    - df (DataFrame): The input dataframe containing methylation sequence counts.
+
+    Returns:
+    - DataFrame: The dataframe with added summary rows.
+    """
+    # Calculate the sum of all rows
+    total_all_events = df.sum()
+
+    # Calculate sums for specific categories
+    sum_specific_events = df.loc[['0001', '0010', '0101', '0110', '1001', '1010', '1101', '1110']].sum()
+    sum_dme = df.loc[['0110', '0111']].sum()
+    sum_dnme = df.loc[['1001', '1011']].sum()
+    sum_ce = df.loc[['0100', '1000']].sum()
+    sum_snms = df.loc[['1100', '1101', '1111']].sum()
+    sum_sms = df.loc[['0011', '1101']].sum()
+
+    # Add the summary rows to the dataframe
+    df.loc['CXX_E'] = total_all_events
+    df.loc['CXX_SE'] = sum_specific_events
+    df.loc['CXX_DME'] = sum_dme
+    df.loc['CXX_DNME'] = sum_dnme
+    df.loc['CXX_CE'] = sum_ce
+    df.loc['CXX_SNMSs'] = sum_snms
+    df.loc['CXX_SMSs'] = sum_sms
+
+    # Calculate the total of the total counts in each category
+    total_total_count_in_each_category = df.loc[['CXX_SE', 'CXX_DME', 'CXX_DNME', 'CXX_CE', 'CXX_SNMSs', 'CXX_SMSs']].sum()
+    df.loc['CXX_TTCIE'] = total_total_count_in_each_category
+
+    return df
 
 
 def methypy(input_file):
@@ -107,7 +147,12 @@ def methypy(input_file):
     cxg_df_updated.set_index('Sequence', inplace=True)
     cxx_df_updated.set_index('Sequence', inplace=True)
 
-    return cg_df_updated, cxg_df_updated, cxx_df_updated, df_with_sequences
+    # Add summary rows to each updated dataframe
+    cg_df_updated_with_summary = add_summary_rows(cg_df_updated)
+    cxg_df_updated_with_summary = add_summary_rows(cxg_df_updated)
+    cxx_df_updated_with_summary = add_summary_rows(cxx_df_updated)
+
+    return cg_df_updated_with_summary, cxg_df_updated_with_summary, cxx_df_updated_with_summary, df_with_sequences
 
 
 # Execute the main function and get the updated dataframes
