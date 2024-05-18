@@ -1,9 +1,13 @@
 import pandas as pd
 import numpy as np
+import os
 
 # D:\Python\ZBiB\Renia\PZRP 5K Ex.xlsx
 
 input_file = input("Please select your file: ")
+
+# Define the valid file extensions for input Excel files
+VALID_FILE_EXTENSION = ['.xlsx']
 
 EVENTS = [
     '0000', '0001', '0010', '0011',
@@ -11,6 +15,46 @@ EVENTS = [
     '1000', '1001', '1010', '1011',
     '1100', '1101', '1110', '1111'
 ]
+
+
+def is_valid_file(file_path):
+    """
+    Check if the file path has a valid extension.
+    
+    Parameters:
+        file_path (str): The file path to check.
+        
+    Returns:
+        bool: True if the file path has a valid extension, False otherwise.
+    """
+    _, file_ext = os.path.splitext(file_path)
+    return file_ext.lower() in VALID_FILE_EXTENSION
+
+
+def read_input_file(input_file):
+    """
+    Read the input Excel file if it exists and has a valid format.
+    
+    Parameters:
+        input_file (str): The path to the input Excel file.
+        
+    Returns:
+        pd.DataFrame or None: The DataFrame read from the Excel file, or None if reading failed.
+    """
+    if not os.path.exists(input_file):
+        print("Error: File not found.")
+        return None
+    
+    if not is_valid_file(input_file):
+        print("Error: Invalid file format. Supported formats: .xlsx, .xls")
+        return None
+    
+    try:
+        df = pd.read_excel(input_file)
+        return df
+    except Exception as e:
+        print(f"Error: Failed to read the Excel file. {e}")
+        return None
 
 
 def generate_sequences(df):
@@ -118,7 +162,10 @@ def methypy(input_file):
         tuple: Updated dataframes for each methylation type and the original dataframe with sequences.
     """
     # Read the input Excel file
-    df = pd.read_excel(input_file)
+    df = read_input_file(input_file)
+    if df is None:
+        return None, None, None, None
+
     half_cols = len(df.columns) // 2
 
     # Prepare column names for the dataframe
@@ -137,29 +184,51 @@ def methypy(input_file):
         for i in range(1, half_cols):
             df[f'R{i}'] = 0
 
-    # Update dataframes for each methylation type with sequence counts
-    cg_df_updated = update_methylation_df(cg_df, df_with_sequences, 'CG', half_cols)
-    cxg_df_updated = update_methylation_df(cxg_df, df_with_sequences, 'CXG', half_cols)
-    cxx_df_updated = update_methylation_df(cxx_df, df_with_sequences, 'CXX', half_cols)
+    # Define a dictonary to store DataFrames
+    dataframes = {
+        "CXX": cxx_df,
+        "CG": cg_df,
+        "CXG": cxg_df 
+    }
 
-    # Set the 'Sequence' column as the index for each updated dataframe
-    cg_df_updated.set_index('Sequence', inplace=True)
-    cxg_df_updated.set_index('Sequence', inplace=True)
-    cxx_df_updated.set_index('Sequence', inplace=True)
+    for methyl_type, df in dataframes.items():
+        # Update dataframe with sequence counts
+        updated_df = update_methylation_df(cg_df, df_with_sequences, methyl_type, half_cols)
 
-    # Add summary rows to each updated dataframe
-    cg_df_updated_with_summary = add_summary_rows(cg_df_updated)
-    cxg_df_updated_with_summary = add_summary_rows(cxg_df_updated)
-    cxx_df_updated_with_summary = add_summary_rows(cxx_df_updated)
+        # Set the 'Sequence' column as the index
+        updated_df.set_index('Sequence', inplace=True)
 
-    return cg_df_updated_with_summary, cxg_df_updated_with_summary, cxx_df_updated_with_summary, df_with_sequences
+        # Add summary rows
+        updated_df_with_summary = add_summary_rows(updated_df)
+
+        # Update the dataframe in the dictionary
+        dataframes[methyl_type] = updated_df_with_summary
+
+    # Unpack the updated dataframes from the dictionary
+    cg_df_temp = dataframes['cg']
+    cxg_df_temp = dataframes['cxg']
+    cxx_df_temp = dataframes['cxx']
+
+    return cg_df_temp, cxg_df_temp, cxx_df_temp, df_with_sequences
 
 
-# Execute the main function and get the updated dataframes
-cg_df, cxg_df, cxx_df, df_with_sequences = methypy(input_file)
+def main():
+    # Prompt user to select the input file
+    input_file = input("Please enter the path to your Excel file: ")
+    
+    # Process the input file
+    cg_df, cxg_df, cxx_df, df_with_sequences = methypy(input_file)
+    
+    if cg_df is not None and cxg_df is not None and cxx_df is not None and df_with_sequences is not None:
+        # Save the updated dataframes to CSV files
+        df_with_sequences.to_csv('sekwencje.csv', index=False)
+        cg_df.to_csv('cg_df.csv', index=False)
+        cxg_df.to_csv('cxg_df.csv', index=False)
+        cxx_df.to_csv('cxx_df.csv', index=False)
+        print("Processing completed successfully.")
+    else:
+        print("Processing failed. Please check the input file path and format.")
 
-# Save the updated dataframes to CSV files
-df_with_sequences.to_csv('sekwencje.csv', index=False)
-cg_df.to_csv('cg_df.csv', index=False)
-cxg_df.to_csv('cxg_df.csv', index=False)
-cxx_df.to_csv('cxx_df.csv', index=False)
+
+if __name__ == "__main__":
+    main()
