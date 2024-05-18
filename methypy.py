@@ -4,8 +4,6 @@ import os
 
 # D:\Python\ZBiB\Renia\PZRP 5K Ex.xlsx
 
-input_file = input("Please select your file: ")
-
 # Define the valid file extensions for input Excel files
 VALID_FILE_EXTENSION = ['.xlsx']
 
@@ -101,7 +99,10 @@ def update_methylation_df(methylation_df, df, methyl_type, half_cols):
         pd.DataFrame: Updated methylation dataframe with sequence counts.
     """
     # Select rows that match the given methylation type
-    methyl_df = df[df['MethylType'] == methyl_type]  
+    if methyl_type != "T":
+        methyl_df = df[df['MethylType'] == methyl_type]  
+    else:
+        methyl_df = df
 
     for index, row in methylation_df.iterrows():
         sequence = row['Sequence']
@@ -114,7 +115,7 @@ def update_methylation_df(methylation_df, df, methyl_type, half_cols):
     return methylation_df
 
 
-def add_summary_rows(df):
+def add_summary_rows(df, methyl_type):
     """
     Add summary rows to the dataframe based on specific categories.
 
@@ -136,17 +137,24 @@ def add_summary_rows(df):
     sum_sms = df.loc[['0011', '1101']].sum()
 
     # Add the summary rows to the dataframe
-    df.loc['CXX_E'] = total_all_events
-    df.loc['CXX_SE'] = sum_specific_events
-    df.loc['CXX_DME'] = sum_dme
-    df.loc['CXX_DNME'] = sum_dnme
-    df.loc['CXX_CE'] = sum_ce
-    df.loc['CXX_SNMSs'] = sum_snms
-    df.loc['CXX_SMSs'] = sum_sms
+    df.loc[f'{methyl_type}_E'] = total_all_events
+    df.loc[f'{methyl_type}_SE'] = sum_specific_events
+    df.loc[f'{methyl_type}_DME'] = sum_dme
+    df.loc[f'{methyl_type}_DNME'] = sum_dnme
+    df.loc[f'{methyl_type}_CE'] = sum_ce
+    df.loc[f'{methyl_type}_SNMSs'] = sum_snms
+    df.loc[f'{methyl_type}_SMSs'] = sum_sms
 
     # Calculate the total of the total counts in each category
-    total_total_count_in_each_category = df.loc[['CXX_SE', 'CXX_DME', 'CXX_DNME', 'CXX_CE', 'CXX_SNMSs', 'CXX_SMSs']].sum()
-    df.loc['CXX_TTCIE'] = total_total_count_in_each_category
+    total_total_count_in_each_category = df.loc[[
+        f'{methyl_type}_SE', 
+        f'{methyl_type}_DME', 
+        f'{methyl_type}_DNME', 
+        f'{methyl_type}_CE', 
+        f'{methyl_type}_SNMSs', 
+        f'{methyl_type}_SMSs'
+        ]].sum()
+    df.loc[f'{methyl_type}_TTCIE'] = total_total_count_in_each_category
 
     return df
 
@@ -164,7 +172,7 @@ def methypy(input_file):
     # Read the input Excel file
     df = read_input_file(input_file)
     if df is None:
-        return None, None, None, None
+        return None, None, None, None, None
 
     half_cols = len(df.columns) // 2
 
@@ -178,9 +186,10 @@ def methypy(input_file):
     cxx_df = pd.DataFrame({'Sequence': EVENTS})
     cg_df = pd.DataFrame({'Sequence': EVENTS})
     cxg_df = pd.DataFrame({'Sequence': EVENTS})
+    total_df = pd.DataFrame({'Sequence': EVENTS})
 
     # Initialize the sequence count columns with 0
-    for df in [cxx_df, cg_df, cxg_df]:
+    for df in [cxx_df, cg_df, cxg_df, total_df]:
         for i in range(1, half_cols):
             df[f'R{i}'] = 0
 
@@ -188,28 +197,24 @@ def methypy(input_file):
     dataframes = {
         "CXX": cxx_df,
         "CG": cg_df,
-        "CXG": cxg_df 
+        "CXG": cxg_df,
+        "T": total_df
     }
 
     for methyl_type, df in dataframes.items():
         # Update dataframe with sequence counts
-        updated_df = update_methylation_df(cg_df, df_with_sequences, methyl_type, half_cols)
+        updated_df = update_methylation_df(df, df_with_sequences, methyl_type, half_cols)
 
         # Set the 'Sequence' column as the index
         updated_df.set_index('Sequence', inplace=True)
 
         # Add summary rows
-        updated_df_with_summary = add_summary_rows(updated_df)
+        updated_df_with_summary = add_summary_rows(updated_df, methyl_type)
 
         # Update the dataframe in the dictionary
         dataframes[methyl_type] = updated_df_with_summary
 
-    # Unpack the updated dataframes from the dictionary
-    cg_df_temp = dataframes['cg']
-    cxg_df_temp = dataframes['cxg']
-    cxx_df_temp = dataframes['cxx']
-
-    return cg_df_temp, cxg_df_temp, cxx_df_temp, df_with_sequences
+    return dataframes['CG'], dataframes['CXG'], dataframes['CXX'], dataframes['T'], df_with_sequences
 
 
 def main():
@@ -217,14 +222,15 @@ def main():
     input_file = input("Please enter the path to your Excel file: ")
     
     # Process the input file
-    cg_df, cxg_df, cxx_df, df_with_sequences = methypy(input_file)
+    cg_df, cxg_df, cxx_df, total_df, df_with_sequences = methypy(input_file)
     
     if cg_df is not None and cxg_df is not None and cxx_df is not None and df_with_sequences is not None:
         # Save the updated dataframes to CSV files
-        df_with_sequences.to_csv('sekwencje.csv', index=False)
-        cg_df.to_csv('cg_df.csv', index=False)
-        cxg_df.to_csv('cxg_df.csv', index=False)
-        cxx_df.to_csv('cxx_df.csv', index=False)
+        df_with_sequences.to_csv('sekwencje.csv', index=True)
+        cg_df.to_csv('cg_df.csv', index=True)
+        cxg_df.to_csv('cxg_df.csv', index=True)
+        cxx_df.to_csv('cxx_df.csv', index=True)
+        total_df.to_csv('total_df.csv', index=True)
         print("Processing completed successfully.")
     else:
         print("Processing failed. Please check the input file path and format.")
