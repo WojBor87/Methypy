@@ -10,11 +10,12 @@ Methypy is a Python script designed for analyzing methylation sequences from an 
 - **Output:** Saves the updated dataframes to CSV files.
 
 ## Files
-- **methylation_analysis.py:** Main script for processing the methylation data.
+- **methypy.py:** Main script for processing the methylation data.
 - **sekwencje.csv:** CSV file containing the original data with generated sequences.
 - **cg_df.csv:** CSV file with counts of CG methylation sequences.
 - **cxg_df.csv:** CSV file with counts of CXG methylation sequences.
 - **cxx_df.csv:** CSV file with counts of CXX methylation sequences.
+- **total_df.csv:** CSV file with counts of all methylation sequences.
 
 ## Usage
 1. **Install Dependencies:** Ensure you have pandas and numpy installed in your Python environment.
