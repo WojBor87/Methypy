@@ -163,21 +163,42 @@ def add_summary_rows(df, methyl_type):
 
 
 def calculations(summary_df, methyl_type, dataframe_d1):
+    """
+    The 'calculations' function updates the summary dataframe for 
+    a specific methylation type with several computed metrics. 
+    These metrics include percentages of different methylation events, 
+    corrected values for sequence variance (SV), direct methylation variance (DMV), 
+    and de novo methylation variance (DNMV). It also computes a value for differential methylation (dMET).
+
+    Parameters:
+    summary_df (pd.DataFrame): The summary dataframe containing sequence counts 
+                               and intermediate results for the given methylation type.
+    methyl_type (str): The methylation type to perform calculations for (e.g., 'CG', 'CXG', 'CXX').
+    dataframe_d1 (dict): A dictionary containing the 'D1' values for each methylation type.
+                         Keys are the methylation types and values are the corresponding 'D1' values.
+
+    Returns:
+    pd.DataFrame: The updated summary dataframe with computed metrics.
+    """
+    # Set D1 values for each methylation type
     summary_df.loc['CXX_D1'] = dataframe_d1['CXX']
     summary_df.loc['CG_D1'] = dataframe_d1['CG']
     summary_df.loc['CXG_D1'] = dataframe_d1['CXG']
     summary_df.loc['D1'] = dataframe_d1['T']
+
+    # Compute percentage values
     summary_df.loc[f'{methyl_type}_DMV'] = 100 * summary_df.loc[f'{methyl_type}_DME'] / summary_df.loc['D1']
     summary_df.loc[f'{methyl_type}_DNMV'] = 100 * summary_df.loc[f'{methyl_type}_DNME'] / summary_df.loc['D1']
     summary_df.loc[f'{methyl_type}_SV'] = 100 * summary_df.loc[f'{methyl_type}_SE'] / summary_df.loc['D1']
     summary_df.loc[f'{methyl_type}_CV'] = 100 * summary_df.loc[f'{methyl_type}_CE'] / summary_df.loc['D1']
     summary_df.loc[f'{methyl_type}_TTCIV'] = 100 * summary_df.loc[f'{methyl_type}_TTCIE'] / summary_df.loc['D1']
 
-    # SV+DMV+DNMV
+    # Calculate the sum of SV, DMV, and DNMV
     SUM = summary_df.loc[f'{methyl_type}_SV'] + summary_df.loc[f'{methyl_type}_DMV'] + summary_df.loc[f'{methyl_type}_DNMV']
-    # CV / SUM
+    # Calculate CV multiplier
     CV_multiplier = summary_df.loc[f'{methyl_type}_CV'] / SUM
 
+    # Compute CN values
     summary_df.loc[f'{methyl_type}_SV_CN'] = summary_df.loc[f'{methyl_type}_SV'] + (summary_df.loc[f'{methyl_type}_SV'] * CV_multiplier) / summary_df.loc[f'{methyl_type}_E']
     summary_df.loc[f'{methyl_type}_DMV_CN'] = summary_df.loc[f'{methyl_type}_DMV'] + (summary_df.loc[f'{methyl_type}_DMV'] * CV_multiplier) / summary_df.loc[f'{methyl_type}_E']
     summary_df.loc[f'{methyl_type}_DNMV_CN'] = summary_df.loc[f'{methyl_type}_DNMV'] + (summary_df.loc[f'{methyl_type}_DNMV'] * CV_multiplier) / summary_df.loc[f'{methyl_type}_E']
