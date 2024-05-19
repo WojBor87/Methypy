@@ -1,5 +1,4 @@
 import pandas as pd
-import numpy as np
 import os
 
 # D:\Python\ZBiB\Renia\PZRP 5K Ex.xlsx
@@ -156,7 +155,35 @@ def add_summary_rows(df, methyl_type):
         ]].sum()
     df.loc[f'{methyl_type}_TTCIE'] = total_total_count_in_each_category
 
+    # Calculate D1
+    d1 = df.loc[[f'{methyl_type}_TTCIE', '0000']].sum()
+    df.loc[f'{methyl_type}_D1'] = d1 
+
     return df
+
+
+def calculations(summary_df, methyl_type, dataframe_d1):
+    summary_df.loc['CXX_D1'] = dataframe_d1['CXX']
+    summary_df.loc['CG_D1'] = dataframe_d1['CG']
+    summary_df.loc['CXG_D1'] = dataframe_d1['CXG']
+    summary_df.loc['D1'] = dataframe_d1['T']
+    summary_df.loc[f'{methyl_type}_DMV'] = 100 * summary_df.loc[f'{methyl_type}_DME'] / summary_df.loc['D1']
+    summary_df.loc[f'{methyl_type}_DNMV'] = 100 * summary_df.loc[f'{methyl_type}_DNME'] / summary_df.loc['D1']
+    summary_df.loc[f'{methyl_type}_SV'] = 100 * summary_df.loc[f'{methyl_type}_SE'] / summary_df.loc['D1']
+    summary_df.loc[f'{methyl_type}_CV'] = 100 * summary_df.loc[f'{methyl_type}_CE'] / summary_df.loc['D1']
+    summary_df.loc[f'{methyl_type}_TTCIV'] = 100 * summary_df.loc[f'{methyl_type}_TTCIE'] / summary_df.loc['D1']
+
+    # SV+DMV+DNMV
+    SUM = summary_df.loc[f'{methyl_type}_SV'] + summary_df.loc[f'{methyl_type}_DMV'] + summary_df.loc[f'{methyl_type}_DNMV']
+    # CV / SUM
+    CV_multiplier = summary_df.loc[f'{methyl_type}_CV'] / SUM
+
+    summary_df.loc[f'{methyl_type}_SV_CN'] = summary_df.loc[f'{methyl_type}_SV'] + (summary_df.loc[f'{methyl_type}_SV'] * CV_multiplier) / summary_df.loc[f'{methyl_type}_E']
+    summary_df.loc[f'{methyl_type}_DMV_CN'] = summary_df.loc[f'{methyl_type}_DMV'] + (summary_df.loc[f'{methyl_type}_DMV'] * CV_multiplier) / summary_df.loc[f'{methyl_type}_E']
+    summary_df.loc[f'{methyl_type}_DNMV_CN'] = summary_df.loc[f'{methyl_type}_DNMV'] + (summary_df.loc[f'{methyl_type}_DNMV'] * CV_multiplier) / summary_df.loc[f'{methyl_type}_E']
+    summary_df.loc[f'{methyl_type}_dMET_CN'] = summary_df.loc[f'{methyl_type}_DNMV_CN'] - summary_df.loc[f'{methyl_type}_DMV_CN']
+
+    return summary_df
 
 
 def methypy(input_file):
@@ -172,7 +199,7 @@ def methypy(input_file):
     # Read the input Excel file
     df = read_input_file(input_file)
     if df is None:
-        return None, None, None, None, None
+        return None, None, None, None
 
     half_cols = len(df.columns) // 2
 
@@ -201,6 +228,9 @@ def methypy(input_file):
         "T": total_df
     }
 
+    dataframe_d1 = {
+    }
+
     for methyl_type, df in dataframes.items():
         # Update dataframe with sequence counts
         updated_df = update_methylation_df(df, df_with_sequences, methyl_type, half_cols)
@@ -213,8 +243,16 @@ def methypy(input_file):
 
         # Update the dataframe in the dictionary
         dataframes[methyl_type] = updated_df_with_summary
+        dataframe_d1[methyl_type] = updated_df_with_summary.loc[f'{methyl_type}_D1']
+    
+    for methyl_type, df in dataframes.items():
+        # Update dataframe with calculations
+        updated_df_with_calculations = calculations(df, methyl_type, dataframe_d1)
 
-    return dataframes['CG'], dataframes['CXG'], dataframes['CXX'], dataframes['T'], df_with_sequences
+        # Update the dataframe in the dictionary
+        dataframes[methyl_type] = updated_df_with_calculations
+
+    return dataframes['CG'], dataframes['CXG'], dataframes['CXX'], dataframes['T']
 
 
 def main():
@@ -222,15 +260,14 @@ def main():
     input_file = input("Please enter the path to your Excel file: ")
     
     # Process the input file
-    cg_df, cxg_df, cxx_df, total_df, df_with_sequences = methypy(input_file)
+    cg_df, cxg_df, cxx_df, total_df = methypy(input_file)
     
-    if cg_df is not None and cxg_df is not None and cxx_df is not None and df_with_sequences is not None:
+    if cg_df is not None and cxg_df is not None and cxx_df is not None and total_df is not None:
         # Save the updated dataframes to CSV files
-        df_with_sequences.to_csv('sekwencje.csv', index=True)
-        cg_df.to_csv('cg_df.csv', index=True)
-        cxg_df.to_csv('cxg_df.csv', index=True)
-        cxx_df.to_csv('cxx_df.csv', index=True)
-        total_df.to_csv('total_df.csv', index=True)
+        cg_df.to_csv('results\cg_df.csv', index=True)
+        cxg_df.to_csv('results\cxg_df.csv', index=True)
+        cxx_df.to_csv('results\cxx_df.csv', index=True)
+        total_df.to_csv('results\\total_df.csv', index=True)
         print("Processing completed successfully.")
     else:
         print("Processing failed. Please check the input file path and format.")
