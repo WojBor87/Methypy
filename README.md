@@ -11,16 +11,23 @@ Methypy is a Python script designed for analyzing methylation sequences from an 
 
 ## Files
 - **methypy.py:** Main script for processing the methylation data.
-- **sekwencje.csv:** CSV file containing the original data with generated sequences.
-- **cg_df.csv:** CSV file with counts of CG methylation sequences.
-- **cxg_df.csv:** CSV file with counts of CXG methylation sequences.
-- **cxx_df.csv:** CSV file with counts of CXX methylation sequences.
-- **total_df.csv:** CSV file with counts of all methylation sequences.
+- **results/cg_df.csv:** CSV file with counts of CG methylation sequences.
+- **results/cxg_df.csv:** CSV file with counts of CXG methylation sequences.
+- **results/cxx_df.csv:** CSV file with counts of CXX methylation sequences.
+- **results/total_df.csv:** CSV file with counts of all methylation sequences.
 
 ## Usage
-1. **Install Dependencies:** Ensure you have pandas and numpy installed in your Python environment.
-2. **Run the Script:** Execute the script with the provided Excel file path.
-3. **Analyze Results:** Review the generated CSV files for methylation sequence analysis.
+1. **Install Dependencies:** Ensure you have pandas installed in your Python environment.
+   ```sh
+   pip install pandas
+2. **Install Requirements: Install the required Python packages using the requirements.txt file.
+   ```sh
+   pip install -r requirements.txt
+3. **Run the Script: Execute the script with the provided Excel file path.
+   ```sh
+   python methypy.py
+4. **Provide File Path: When prompted, enter the path to your Excel file.
+5. Analyze Results: Review the generated CSV files in the results directory for methylation sequence analysis.
 
 ## Author
 - GitHub: [WojBor87](https://github.com/WojBor87)
