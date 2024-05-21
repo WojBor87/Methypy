@@ -17,17 +17,14 @@ Methypy is a Python script designed for analyzing methylation sequences from an 
 - **results/total_df.csv:** CSV file with counts of all methylation sequences.
 
 ## Usage
-1. **Install Dependencies:** Ensure you have pandas installed in your Python environment.
-   ```sh
-   pip install pandas
-2. **Install Requirements: Install the required Python packages using the requirements.txt file.
+1. **Install Requirements: Install the required Python packages using the requirements.txt file.
    ```sh
    pip install -r requirements.txt
-3. **Run the Script: Execute the script with the provided Excel file path.
+2. **Run the Script: Execute the script with the provided Excel file path.
    ```sh
    python methypy.py
-4. **Provide File Path: When prompted, enter the path to your Excel file.
-5. Analyze Results: Review the generated CSV files in the results directory for methylation sequence analysis.
+3. **Provide File Path: When prompted, enter the path to your Excel file.
+4. Analyze Results: Review the generated CSV files in the results directory for methylation sequence analysis.
 
 ## Author
 - GitHub: [WojBor87](https://github.com/WojBor87)
